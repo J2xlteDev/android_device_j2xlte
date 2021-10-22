@@ -19,20 +19,20 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, vendor/cm/config/common_full_phone.mk)
 
 # Inherit device configuration
-$(call inherit-product, device/samsung/j3xnlte/j3xnlte.mk)
+$(call inherit-product, device/samsung/j2xlte/j2xlte.mk)
 
 ## Device identifier. This must come after all inclusions
-PRODUCT_DEVICE := j3xnlte
-PRODUCT_RELEASE_NAME := j3xnlte
-PRODUCT_NAME := lineage_j3xnlte
+PRODUCT_DEVICE := j2xlte
+PRODUCT_RELEASE_NAME := j2xlte
+PRODUCT_NAME := lineage_j2xlte
 PRODUCT_BRAND := samsung
-PRODUCT_MODEL := SM-J320FN
+PRODUCT_MODEL := SM-J210F
 PRODUCT_MANUFACTURER := samsung
 
 PRODUCT_GMS_CLIENTID_BASE := android-samsung
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
     PRODUCT_NAME=j3xnltexx \
-    PRIVATE_BUILD_DESC="j3xnltexx-user 5.1.1 LMY47V J320FNXXU0ARB1 release-keys"
+    PRIVATE_BUILD_DESC="j2xltedd-user 6.0.1 MMB29Q J210FXXU0ARA2 test-keys"
 
-BUILD_FINGERPRINT := samsung/j3xnltexx/j3xnlte:5.1.1/LMY47V/J320FNXXU0ARB1:user/release-keys
+BUILD_FINGERPRINT := samsung/j2xltedd/j2xlte:6.0.1/MMB29Q/J210FXXU0ARA2:user/test-keys
