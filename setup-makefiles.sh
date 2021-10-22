@@ -3,7 +3,7 @@ set -e
 export INITIAL_COPYRIGHT_YEAR=2015
 
 # Required!
-DEVICE=j3xnlte
+DEVICE=j2xlte
 VENDOR=samsung
 
 # Load extractutils and do some sanity checks
