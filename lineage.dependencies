@@ -1,22 +1,7 @@
 [
   {
-    "repository": "iamsj7/android_device_samsung_sharkls-common",
+    "repository": "j2xlte-development/common_tree-sharkls",
     "target_path": "device/samsung/sharkls-common",
-    "revision": "cm-14.1"
-  },
-  {
-    "repository": "LineageOS/android_vendor_nxp-nfc_opensource_Nfc",
-    "target_path": "vendor/nxp-nfc/opensource/Nfc",
-    "revision": "cm-14.1"
-  },
-  {
-    "repository": "LineageOS/android_vendor_nxp-nfc_opensource_frameworks",
-    "target_path": "vendor/nxp-nfc/opensource/frameworks",
-    "revision": "cm-14.1"
-  },
-  {
-    "repository": "LineageOS/android_vendor_nxp-nfc_opensource_libnfc-nci",
-    "target_path": "vendor/nxp-nfc/opensource/libnfc-nci",
     "revision": "cm-14.1"
   }
 ]
