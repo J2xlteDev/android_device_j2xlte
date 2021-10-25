@@ -32,7 +32,7 @@ PRODUCT_MANUFACTURER := samsung
 PRODUCT_GMS_CLIENTID_BASE := android-samsung
 
 PRODUCT_BUILD_PROP_OVERRIDES += \
-    PRODUCT_NAME=j3xnltexx \
+    PRODUCT_NAME=j2xltedd \
     PRIVATE_BUILD_DESC="j2xltedd-user 6.0.1 MMB29Q J210FXXU0ARA2 test-keys"
 
 BUILD_FINGERPRINT := samsung/j2xltedd/j2xlte:6.0.1/MMB29Q/J210FXXU0ARA2:user/test-keys
