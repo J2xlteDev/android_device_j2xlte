@@ -1,0 +1,256 @@
+diff --git a/include/media/stagefright/ACodec.h b/include/media/stagefright/ACodec.h
+index d682632..8006024 100644
+--- a/include/media/stagefright/ACodec.h
++++ b/include/media/stagefright/ACodec.h
+@@ -348,7 +348,7 @@ protected:
+     status_t submitOutputMetadataBuffer();
+     void signalSubmitOutputMetadataBufferIfEOS_workaround();
+     status_t allocateOutputBuffersFromNativeWindow();
+-#ifdef USE_SAMSUNG_COLORFORMAT
++#if defined(USE_SAMSUNG_COLORFORMAT) || defined(USE_SPRD_COLORFORMAT)
+     void setNativeWindowColorFormat(OMX_COLOR_FORMATTYPE &eNativeColorFormat);
+ #endif
+     status_t cancelBufferToNativeWindow(BufferInfo *info);
+diff --git a/include/media/stagefright/MediaCodec.h b/include/media/stagefright/MediaCodec.h
+index 05f6581..5dc5cda 100644
+--- a/include/media/stagefright/MediaCodec.h
++++ b/include/media/stagefright/MediaCodec.h
+@@ -46,6 +46,7 @@ class Surface;
+ struct MediaCodec : public AHandler {
+     enum ConfigureFlags {
+         CONFIGURE_FLAG_ENCODE   = 1,
++        CONFIGURE_FLAG_THUMBNAIL   = 2,
+     };
+ 
+     enum BufferFlags {
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index a11494d..c051e74 100644
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1031,7 +1031,7 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+     memset(&mLastNativeWindowCrop, 0, sizeof(mLastNativeWindowCrop));
+     mLastNativeWindowDataSpace = HAL_DATASPACE_UNKNOWN;
+ 
+-#ifdef USE_SAMSUNG_COLORFORMAT
++#if defined(USE_SAMSUNG_COLORFORMAT) || defined(USE_SPRD_COLORFORMAT)
+     OMX_COLOR_FORMATTYPE eNativeColorFormat = def.format.video.eColorFormat;
+     setNativeWindowColorFormat(eNativeColorFormat);
+ #endif
+@@ -1041,7 +1041,7 @@ status_t ACodec::setupNativeWindowSizeFormatAndUsage(
+             nativeWindow,
+             def.format.video.nFrameWidth,
+             def.format.video.nFrameHeight,
+-#ifdef USE_SAMSUNG_COLORFORMAT
++#if defined(USE_SAMSUNG_COLORFORMAT) || defined(USE_SPRD_COLORFORMAT)
+             eNativeColorFormat,
+ #else
+             def.format.video.eColorFormat,
+@@ -1433,6 +1433,24 @@ void ACodec::setNativeWindowColorFormat(OMX_COLOR_FORMATTYPE &eNativeColorFormat
+ }
+ #endif
+ 
++#ifdef USE_SPRD_COLORFORMAT
++void ACodec::setNativeWindowColorFormat(OMX_COLOR_FORMATTYPE &eNativeColorFormat)
++{
++    // In case of SPRD, we set proper native color format for the Native Window
++    if (!strncasecmp(mComponentName.c_str(), "OMX.sprd", 8)) {
++        switch (eNativeColorFormat) {
++            case OMX_COLOR_FormatYUV420SemiPlanar:
++                eNativeColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YCbCr_420_SP;
++                break;
++            case OMX_COLOR_FormatYUV420Planar:
++            default:
++                eNativeColorFormat = (OMX_COLOR_FORMATTYPE)HAL_PIXEL_FORMAT_YCbCr_420_P;
++                break;
++        }
++    }
++}
++#endif
++
+ status_t ACodec::cancelBufferToNativeWindow(BufferInfo *info) {
+     CHECK_EQ((int)info->mStatus, (int)BufferInfo::OWNED_BY_US);
+ 
+@@ -2391,6 +2409,10 @@ status_t ACodec::configureCodec(
+     int32_t maxInputSize;
+     if (msg->findInt32("max-input-size", &maxInputSize)) {
+         err = setMinBufferSize(kPortIndexInput, (size_t)maxInputSize);
++        //sprd added. inputPort must be identical to output for raw decoder.
++        if ((err == OK) && !strcasecmp(mime, MEDIA_MIMETYPE_AUDIO_RAW) ) {
++            err = setMinBufferSize(kPortIndexOutput, (size_t)maxInputSize);
++        }
+     } else if (!strcmp("OMX.Nvidia.aac.decoder", mComponentName.c_str())) {
+         err = setMinBufferSize(kPortIndexInput, 8192);  // XXX
+     }
+@@ -2410,6 +2432,28 @@ status_t ACodec::configureCodec(
+         err = setOperatingRate(rateFloat, video);
+     }
+ 
++    //check thumbnail mode
++    int32_t thumbnail;
++    if (msg->findInt32("thumbnail", &thumbnail)) {
++        OMX_INDEXTYPE index;
++
++        status_t err =
++            mOMX->getExtensionIndex(
++                    mNode,
++                    "OMX.sprd.index.ThumbnailMode",
++                    &index);
++
++        if (err == OK) {
++            OMX_BOOL enable = OMX_TRUE;
++            err = mOMX->setConfig(mNode, index, &enable, sizeof(enable));
++        }
++
++        if (err != OK) {
++            ALOGI("[%s] setConfig(OMX.sprd.index.ThumbnailMode') invalid 0x%08x",
++                    mComponentName.c_str(), err);
++        }
++    }
++
+     // NOTE: both mBaseOutputFormat and mOutputFormat are outputFormat to signal first frame.
+     mBaseOutputFormat = outputFormat;
+     // trigger a kWhatOutputFormatChanged msg on first buffer
+diff --git a/media/libstagefright/Android.mk b/media/libstagefright/Android.mk
+index e708f68..f62768c 100644
+--- a/media/libstagefright/Android.mk
++++ b/media/libstagefright/Android.mk
+@@ -202,6 +202,10 @@ LOCAL_C_INCLUDES += \
+ 	$(TOP)/hardware/samsung/exynos4/include
+ endif
+ 
++ifeq ($(BOARD_USE_SPRD_COLORFORMAT), true)
++LOCAL_CFLAGS += -DUSE_SPRD_COLORFORMAT
++endif
++
+ LOCAL_MODULE:= libstagefright
+ 
+ LOCAL_MODULE_TAGS := optional
+diff --git a/media/libstagefright/CameraSource.cpp b/media/libstagefright/CameraSource.cpp
+index 8707d96..68fd66b 100644
+--- a/media/libstagefright/CameraSource.cpp
++++ b/media/libstagefright/CameraSource.cpp
+@@ -130,6 +130,8 @@ static int32_t getColorFormat(const char* colorFormat) {
+ #ifdef USE_SAMSUNG_COLORFORMAT
+         static const int OMX_SEC_COLOR_FormatNV12LPhysicalAddress = 0x7F000002;
+         return OMX_SEC_COLOR_FormatNV12LPhysicalAddress;
++#elif USE_SPRD_COLORFORMAT
++        return OMX_SPRD_COLOR_FormatYVU420SemiPlanar;
+ #else
+         return OMX_COLOR_FormatYUV420SemiPlanar;
+ #endif
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index a8e801f..1f26494 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -1770,6 +1770,10 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
+                 mFlags |= kFlagIsEncoder;
+             }
+ 
++            if (flags & CONFIGURE_FLAG_THUMBNAIL) {
++                format->setInt32("thumbnail", true);
++            }
++
+             extractCSD(format);
+ 
+             mCodec->initiateConfigureComponent(format);
+diff --git a/media/libstagefright/StagefrightMetadataRetriever.cpp b/media/libstagefright/StagefrightMetadataRetriever.cpp
+index f00b8b7..9b7285a 100644
+--- a/media/libstagefright/StagefrightMetadataRetriever.cpp
++++ b/media/libstagefright/StagefrightMetadataRetriever.cpp
+@@ -168,10 +168,10 @@ static VideoFrame *extractVideoFrame(
+     // input and output ports, if seeking to a sync frame. NOTE: This request may
+     // fail if component requires more than that for decoding.
+     bool isSeekingClosest = (seekMode == MediaSource::ReadOptions::SEEK_CLOSEST);
+-    if (!isSeekingClosest) {
++    /*if (!isSeekingClosest) {
+         videoFormat->setInt32("android._num-input-buffers", 1);
+         videoFormat->setInt32("android._num-output-buffers", 1);
+-    }
++    }*/
+ 
+     status_t err;
+     sp<ALooper> looper = new ALooper;
+@@ -184,7 +184,8 @@ static VideoFrame *extractVideoFrame(
+         return NULL;
+     }
+ 
+-    err = decoder->configure(videoFormat, NULL /* surface */, NULL /* crypto */, 0 /* flags */);
++    err = decoder->configure(videoFormat, NULL /* surface */, NULL /* crypto */,
++                                            MediaCodec::CONFIGURE_FLAG_THUMBNAIL/* flags */);
+     if (err != OK) {
+         ALOGW("configure returned error %d (%s)", err, asString(err));
+         decoder->release();
+diff --git a/media/libstagefright/wifi-display/source/Converter.cpp b/media/libstagefright/wifi-display/source/Converter.cpp
+index 471152e..67ee7d5 100644
+--- a/media/libstagefright/wifi-display/source/Converter.cpp
++++ b/media/libstagefright/wifi-display/source/Converter.cpp
+@@ -169,7 +169,8 @@ status_t Converter::initEncoder() {
+         mOutputFormat->setInt32("bitrate", audioBitrate);
+     } else {
+         mOutputFormat->setInt32("bitrate", videoBitrate);
+-        mOutputFormat->setInt32("bitrate-mode", OMX_Video_ControlRateConstant);
++        // sprd encoder do not support OMX_Video_ControlRateConstant
++        mOutputFormat->setInt32("bitrate-mode", OMX_Video_ControlRateVariable);
+         mOutputFormat->setInt32("frame-rate", 30);
+         mOutputFormat->setInt32("i-frame-interval", 15);  // Iframes every 15 secs
+ 
+diff --git a/media/mtp/MtpDataPacket.cpp b/media/mtp/MtpDataPacket.cpp
+index 0e9bc34..a6f721f 100644
+--- a/media/mtp/MtpDataPacket.cpp
++++ b/media/mtp/MtpDataPacket.cpp
+@@ -440,7 +440,9 @@ void MtpDataPacket::putString(const uint16_t* string) {
+ 
+ #ifdef MTP_DEVICE 
+ int MtpDataPacket::read(int fd) {
+-    int ret = ::read(fd, mBuffer, MTP_BUFFER_SIZE);
++    /* SPRD: modify code for bug 492017. @{ */
++    int ret = ::read(fd, mBuffer, 512);
++    /* @} */
+     if (ret < MTP_CONTAINER_HEADER_SIZE)
+         return -1;
+     mPacketSize = ret;
+diff --git a/media/mtp/MtpServer.cpp b/media/mtp/MtpServer.cpp
+index e184d48..6584e62 100644
+--- a/media/mtp/MtpServer.cpp
++++ b/media/mtp/MtpServer.cpp
+@@ -442,8 +442,10 @@ bool MtpServer::handleRequest() {
+             break;
+     }
+ 
+-    if (response == MTP_RESPONSE_TRANSACTION_CANCELLED)
+-        return false;
++    /* SPRD: modify code for bug 491977. @{ */
++    //if (response == MTP_RESPONSE_TRANSACTION_CANCELLED)
++        //return false;
++    /* @} */
+     mResponse.setResponseCode(response);
+     return true;
+ }
+diff --git a/services/audioflinger/Threads.cpp b/services/audioflinger/Threads.cpp
+index 5c37263..a838944 100644
+--- a/services/audioflinger/Threads.cpp
++++ b/services/audioflinger/Threads.cpp
+@@ -488,6 +488,9 @@ String8 devicesToString(audio_devices_t devices)
+         {AUDIO_DEVICE_OUT_HDMI_ARC,         "HDMI_ARC"},
+         {AUDIO_DEVICE_OUT_SPDIF,            "SPDIF"},
+         {AUDIO_DEVICE_OUT_FM,               "FM"},
++        {AUDIO_DEVICE_OUT_FM_HEADSET,       "FM Headset Out"},
++        {AUDIO_DEVICE_OUT_FM_SPEAKER,       "FM Speaker Out"},
++        {AUDIO_DEVICE_OUT_ALL_FM,           ""},
+         {AUDIO_DEVICE_OUT_AUX_LINE,         "AUX_LINE"},
+         {AUDIO_DEVICE_OUT_SPEAKER_SAFE,     "SPEAKER_SAFE"},
+         {AUDIO_DEVICE_OUT_IP,               "IP"},
+diff --git a/services/audiopolicy/common/managerdefinitions/src/TypeConverter.cpp b/services/audiopolicy/common/managerdefinitions/src/TypeConverter.cpp
+index b731e2b..d68b46e 100644
+--- a/services/audiopolicy/common/managerdefinitions/src/TypeConverter.cpp
++++ b/services/audiopolicy/common/managerdefinitions/src/TypeConverter.cpp
+@@ -48,6 +48,9 @@ const DeviceConverter::Table DeviceConverter::mTable[] = {
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_HDMI_ARC),
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_SPDIF),
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_FM),
++        MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_FM_HEADSET),
++        MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_FM_SPEAKER),
++        MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_ALL_FM),
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_AUX_LINE),
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_IP),
+         MAKE_STRING_FROM_ENUM(AUDIO_DEVICE_OUT_BUS),

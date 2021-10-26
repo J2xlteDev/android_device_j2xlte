@@ -1,0 +1,2 @@
+allow isolated_app asec_apk_file:file { getattr open read };
+allow isolated_app app_data_file:dir getattr;
