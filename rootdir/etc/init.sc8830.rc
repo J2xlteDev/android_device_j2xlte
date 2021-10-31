@@ -69,6 +69,7 @@ on post-fs-data
     chown bluetooth system /data/misc/bluedroid/bt_stack.conf
     chmod 0640 /data/misc/bluedroid/bt_stack.conf
     mkdir /data/local/media 0770 media system
+    mkdir /data/local/tmp/slogmodem 0770 system system
     mkdir /data/anr 0771 system system
     mkdir /data/tombstones 0771 system system
 
@@ -207,9 +208,6 @@ on boot
     chmod 0660 /sys/class/graphics/fb0/dynamic_pclk
     chmod 0660 /sys/class/graphics/fb0/dynamic_mipi_clk
 
-    # Prevents permission denied error for telephony
-    chmod 0644 /proc/cmdline
-
 on charger
     start console
     start slog
@@ -299,6 +297,8 @@ on property:debug.slog.enabled=0
 
 # Start the daemon
 on property:persist.sys.slog.enabled=1
+    mkdir /data/local/tmp/slog 0770 system system
+	mkdir /data/local/tmp/slogmodem 0770 system system
     start slog
     start slogmodem
     start sprd_res_monitor

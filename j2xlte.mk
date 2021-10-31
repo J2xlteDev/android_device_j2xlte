@@ -81,17 +81,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/media/media_codecs.xml:system/etc/media_codecs.xml \
     $(LOCAL_PATH)/configs/media/media_profiles.xml:system/etc/media_profiles.xml
 
-# Keylayouts
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/keylayout/gpio-keys.kl:system/usr/keylayout/gpio-keys.kl \
-    $(LOCAL_PATH)/keylayout/headset-keyboard.kl:system/usr/keylayout/headset-keyboard.kl \
-    $(LOCAL_PATH)/keylayout/sci-keypad.kl:system/usr/keylayout/sci-keypad.kl \
-    $(LOCAL_PATH)/keylayout/sec_touchkey.kl:system/usr/keylayout/sec_touchkey.kl \
-    $(LOCAL_PATH)/keylayout/sprd-eic-keys.kl:system/usr/keylayout/sprd-eic-keys.kl \
-    $(LOCAL_PATH)/keylayout/sprd-gpio-keys.kl:system/usr/keylayout/sprd-gpio-keys.kl \
-    $(LOCAL_PATH)/keylayout/Synaptics_RMI4_TouchPad_Sensor.idc:system/usr/idc/Synaptics_RMI4_TouchPad_Sensor.idc \
-    $(LOCAL_PATH)/keylayout/Synaptics_HID_TouchPad.idc:system/usr/idc/Synaptics_HID_TouchPad.idc
-
 # Device uses high-density artwork where available
 PRODUCT_AAPT_CONFIG := normal hdpi xhdpi
 PRODUCT_AAPT_PREF_CONFIG := xhdpi
@@ -173,8 +162,8 @@ PRODUCT_PACKAGES += \
     init.board.rc \
     init.recovery.board.rc \
     init.cali.rc \
-    init.j3xnlte.rc \
-    init.j3xnlte_base.rc \
+    init.j2xlte.rc \
+    init.j2xlte_base.rc \
     init.sc8830.rc \
     init.sc8830.usb.rc \
     init.sc8830_ss.rc \

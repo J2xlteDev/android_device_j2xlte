@@ -1,4 +1,4 @@
-#init.j3xnlte_base.rc
+#init.j2xlte_base.rc
 
 on init
     mkdir /cache 0000 system system

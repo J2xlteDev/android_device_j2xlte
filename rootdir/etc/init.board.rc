@@ -295,7 +295,6 @@ on property:ro.radio.noril=yes
 # SSWAP
 service swapon /sbin/sswap -s
     class core
-    seclabel u:r:sswap:s0
     user root
     group root
     oneshot

@@ -1,4 +1,4 @@
-import /init.j3xnlte_base.rc
+import /init.j2xlte_base.rc
 
 on boot
     #IPSec for VOLTE
