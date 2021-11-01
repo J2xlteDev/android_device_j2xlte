@@ -18,8 +18,6 @@
 LOCAL_PATH := device/samsung/j2xlte
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
-
-# The gps config appropriate for this device
 $(call inherit-product, device/common/gps/gps_eu_supl.mk)
 
 # Overlays
@@ -30,9 +28,6 @@ $(call inherit-product, vendor/sprd/proprietaries/proprietaries-scx35l.mk)
 
 # init services
 $(call inherit-product, $(LOCAL_PATH)/init/init_rc.mk)
-
-# gps
-$(call inherit-product, $(LOCAL_PATH)/gps/device-gps.mk)
 
 # Permissions
 PRODUCT_COPY_FILES += \
@@ -87,7 +82,7 @@ PRODUCT_AAPT_PREF_CONFIG := xhdpi
 
 # Set default USB interface
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
-persist.sys.usb.config=mtp,adb
+    persist.sys.usb.config=mtp,adb
 
 # TinyAlsa utils
 PRODUCT_PACKAGES += \
