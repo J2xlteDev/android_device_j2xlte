@@ -1,12 +1,8 @@
-#
-# system.prop for J210F
-#
+# SM-J210F System Properties
 
 ro.lcd_min_brightness=0
 ro.lcd_brightness=162
 persist.sys.usb.config=mtp,adb
-
-ro.nfc.sec_hal=true
 
 ro.product_ship=true
 ro.chipname=SC9830I
@@ -23,7 +19,7 @@ debug.hwui.render_dirty_regions=false
 
 persist.ttydev=ttyVUART0
 
-# delay for ConnectivityChange broadcast (ms)
+# Delay for ConnectivityChange broadcast (ms)
 conn.connectivity_change_delay = 0
 
 ro.product.partitionpath=/dev/block/platform/sdio_emmc/by-name/
@@ -103,12 +99,10 @@ camera.disable_zsl_mode=1
 ro.digital.fm.support=1
 ro.config.ksm.support=true
 
-#zram config
+# ZRAM config
 ro.config.zram.support=true
 ro.board_ram_size=high
-# SPRD: add low cost low memory @{
 ro.config.low_ram=false
-# @}
 
 qemu.hw.mainkeys=1
 persist.ini.connectivity.prodnv=0
