@@ -1,1 +1,1 @@
-# NOT FOR NORMAL USE! Kernel debugging purposes only
+# Working device tree for Galaxy J2 2016 (j2xlte)
