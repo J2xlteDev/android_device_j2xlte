@@ -55,6 +55,11 @@ on fs
     chown system system /sys/power/restart_cpc
     chmod 0220 /sys/power/restart_cpc
 
+service debug /system/bin/debug.sh
+   class core
+   user root
+   oneshot
+   
 #KEY
     chown system system /sys/class/sec/sec_key/reset_enabled
 
