@@ -336,3 +336,6 @@ else
         $(LOCAL_KERNEL):kernel
 endif
 
+# Logging
+PRODUCT_PACKAGES += \
+    debug.sh
